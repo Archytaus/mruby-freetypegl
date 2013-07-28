@@ -36,6 +36,7 @@ mrb_font_buffer_wrap(mrb_state *mrb, texture_atlas_t *atlas, texture_font_t *fon
   tm->atlas = atlas;
   tm->font = font;
   tm->buffer = buffer;
+  tm->size = (vec2){{0, 0}};
   return mrb_obj_value(Data_Wrap_Struct(mrb, mrb_font_buffer_class, &mrb_font_buffer_get_ptr_type, tm));
 }
 
@@ -82,9 +83,12 @@ mrb_font_buffer_create(mrb_state *mrb, mrb_value self)
   return wrapped_font_buffer;
 }
 
-void add_text( vertex_buffer_t * buffer, texture_font_t * font,
+void add_text(struct mrb_font_buffer* font_buffer,
                char* text, vec4 color, vec4 color2 )
 {
+    vertex_buffer_t* buffer = font_buffer->buffer; 
+    texture_font_t * font = font_buffer->font;
+
     vec2 pen = {{0,0}};
     size_t i;
     for( i=0; i<strlen(text); ++i )
@@ -119,6 +123,13 @@ void add_text( vertex_buffer_t * buffer, texture_font_t * font,
             vertex_buffer_push_back( buffer, vertices, 4, indices, 6 );
 
             pen.x += glyph->advance_x;
+            
+            if (x1 > font_buffer->size.x) {
+              font_buffer->size.x = x1;
+            }
+            if (y1 > font_buffer->size.y) {
+              font_buffer->size.y = y1;
+            }
         }
     }
 }
@@ -127,6 +138,7 @@ mrb_value
 mrb_font_buffer_set_text(mrb_state *mrb, mrb_value self)
 {
   struct mrb_font_buffer* font_buffer = mrb_font_buffer_get_ptr(mrb, self);
+  font_buffer->size = (vec2){{0, 0}};
 
   mrb_value text_value;
   mrb_sym flag;
@@ -137,7 +149,7 @@ mrb_font_buffer_set_text(mrb_state *mrb, mrb_value self)
     vec4 black = {{0,0,0,1}};
 
     vertex_buffer_clear(font_buffer->buffer);
-    add_text(font_buffer->buffer, font_buffer->font, text, black, black);  
+    add_text(font_buffer, text, black, black);  
   } else {
     if (flag == mrb_intern_cstr(mrb, "cartoon")) {
       vec4 text_outline  = {{0.0, 0.0, 0.0, 1.0}};
@@ -147,19 +159,19 @@ mrb_font_buffer_set_text(mrb_state *mrb, mrb_value self)
 
       font_buffer->font->outline_type = 2;
       font_buffer->font->outline_thickness = 7;
-      add_text(font_buffer->buffer, font_buffer->font, text, text_outline, text_outline);
+      add_text(font_buffer, text, text_outline, text_outline);
 
       font_buffer->font->outline_type = 2;
       font_buffer->font->outline_thickness = 5;
-      add_text(font_buffer->buffer, font_buffer->font, text, glow, glow);
+      add_text(font_buffer, text, glow, glow);
 
       font_buffer->font->outline_type = 1;
       font_buffer->font->outline_thickness = 3;
-      add_text(font_buffer->buffer, font_buffer->font, text, text_outline, text_outline);
+      add_text(font_buffer, text, text_outline, text_outline);
 
       font_buffer->font->outline_type = 0;
       font_buffer->font->outline_thickness = 0;
-      add_text(font_buffer->buffer, font_buffer->font, text, fill_top, fill_bottom);  
+      add_text(font_buffer, text, fill_top, fill_bottom);  
     }
   }
   
@@ -242,28 +254,7 @@ mrb_font_buffer_calculate_size(mrb_state* mrb, mrb_value self)
   char* text;
   struct mrb_font_buffer* font_buffer = mrb_font_buffer_get_ptr(mrb, self);
 
-  mrb_value text_value;
-  mrb_get_args(mrb, "S", &text_value);
-  text = mrb_string_value_ptr(mrb, text_value);
-
-  vec2 pen = {{0,0}};
-  size_t i;
-  for( i=0; i<strlen(text); ++i )
-  {
-      texture_glyph_t *glyph = texture_font_get_glyph( font_buffer->font, text[i] );
-      if( glyph != NULL )
-      {
-          int kerning = 0;
-          if( i > 0)
-          {
-              kerning = texture_glyph_get_kerning( glyph, text[i-1] );
-          }
-          pen.x += kerning;
-          pen.x += glyph->advance_x;
-      }
-  }
-
-  return wrap_new_vec2(mrb, pen.x, pen.y);
+  return wrap_new_vec2(mrb, font_buffer->size.x, font_buffer->size.y);
 }
 
 void

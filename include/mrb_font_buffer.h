@@ -13,6 +13,7 @@ struct mrb_font_buffer
 	texture_atlas_t *atlas;
 	texture_font_t *font;
   	vertex_buffer_t *buffer;
+  	vec2 size;
 };
 
 void mrb_font_buffer_free(mrb_state *mrb, void *p);
