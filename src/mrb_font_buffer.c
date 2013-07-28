@@ -218,7 +218,7 @@ mrb_font_buffer_calculate_size(mrb_state* mrb, mrb_value self)
   size_t i;
   for( i=0; i<strlen(text); ++i )
   {
-      texture_glyph_t *glyph = texture_font_get_glyph( font, text[i] );
+      texture_glyph_t *glyph = texture_font_get_glyph( font_buffer->font, text[i] );
       if( glyph != NULL )
       {
           int kerning = 0;
