@@ -11,6 +11,8 @@
 #include <mruby/string.h>
 #include <mruby/variable.h>
 
+#include "mrb_vec2.h"
+
 typedef struct {
     float x, y, z;    // position
     float s, t;       // texture
@@ -202,6 +204,35 @@ mrb_font_buffer_render(mrb_state *mrb, mrb_value self)
   return self;
 }
 
+mrb_value 
+mrb_font_buffer_calculate_size(mrb_state* mrb, mrb_value self) 
+{
+  char* text;
+  struct mrb_font_buffer* font_buffer = mrb_font_buffer_get_ptr(mrb, self);
+
+  mrb_value text_value;
+  mrb_get_args(mrb, "S", &text_value);
+  text = mrb_string_value_ptr(mrb, text_value);
+
+  vec2 pen = {{0,0}};
+  size_t i;
+  for( i=0; i<strlen(text); ++i )
+  {
+      texture_glyph_t *glyph = texture_font_get_glyph( font, text[i] );
+      if( glyph != NULL )
+      {
+          int kerning = 0;
+          if( i > 0)
+          {
+              kerning = texture_glyph_get_kerning( glyph, text[i-1] );
+          }
+          pen.x += kerning;
+          pen.x += glyph->advance_x;
+      }
+  }
+
+  return wrap_new_vec2(mrb, pen.x, pen.y);
+}
 
 void
 init_mrb_font_buffer(mrb_state* mrb, struct RClass* mrb_freetype_class)
@@ -212,7 +243,8 @@ init_mrb_font_buffer(mrb_state* mrb, struct RClass* mrb_freetype_class)
   mrb_define_class_method(mrb, mrb_font_buffer_class, "create", mrb_font_buffer_create, ARGS_REQ(2));
   
   mrb_define_method(mrb, mrb_font_buffer_class, "text=", mrb_font_buffer_set_text, ARGS_REQ(1));
-
+  mrb_define_method(mrb, mrb_font_buffer_class, "calculate_size", mrb_font_buffer_calculate_size, ARGS_REQ(1));
+  
   mrb_define_method(mrb, mrb_font_buffer_class, "bind", mrb_font_buffer_bind, ARGS_REQ(1));
   mrb_define_method(mrb, mrb_font_buffer_class, "unbind", mrb_font_buffer_unbind, ARGS_NONE());
 
