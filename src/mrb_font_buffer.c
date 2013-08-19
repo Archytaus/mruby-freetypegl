@@ -43,7 +43,7 @@ mrb_font_buffer_wrap(mrb_state *mrb, texture_atlas_t *atlas, texture_font_t *fon
 struct mrb_font_buffer*
 mrb_font_buffer_get_ptr(mrb_state* mrb, mrb_value value)
 {
-  return (struct mrb_font_buffer*)mrb_data_get_ptr(mrb, value, &mrb_font_buffer_get_ptr_type);
+  return DATA_CHECK_GET_PTR(mrb, value, &mrb_font_buffer_get_ptr_type, struct mrb_font_buffer);
 }
 
 mrb_value
