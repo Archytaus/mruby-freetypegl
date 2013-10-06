@@ -36,7 +36,8 @@ mrb_font_buffer_wrap(mrb_state *mrb, texture_atlas_t *atlas, texture_font_t *fon
   tm->atlas = atlas;
   tm->font = font;
   tm->buffer = buffer;
-  tm->size = (vec2){{0, 0}};
+  tm->max = (vec2){{0, 0}};
+  tm->min = (vec2){{1000, 1000}};
   return mrb_obj_value(Data_Wrap_Struct(mrb, mrb_font_buffer_class, &mrb_font_buffer_get_ptr_type, tm));
 }
 
@@ -124,11 +125,17 @@ void add_text(struct mrb_font_buffer* font_buffer,
 
             pen.x += glyph->advance_x;
             
-            if (x1 > font_buffer->size.x) {
-              font_buffer->size.x = x1;
+            if (x0 < font_buffer->min.x) {
+              font_buffer->min.x = x0;
             }
-            if (y1 > font_buffer->size.y) {
-              font_buffer->size.y = y1;
+            if (x1 > font_buffer->max.x) {
+              font_buffer->max.x = x1;
+            }
+            if (y1 > font_buffer->max.y) {
+              font_buffer->max.y = y1;
+            }
+            if (y0 < font_buffer->min.y) {
+              font_buffer->min.y = y0;
             }
         }
     }
@@ -138,7 +145,8 @@ mrb_value
 mrb_font_buffer_set_text(mrb_state *mrb, mrb_value self)
 {
   struct mrb_font_buffer* font_buffer = mrb_font_buffer_get_ptr(mrb, self);
-  font_buffer->size = (vec2){{0, 0}};
+  font_buffer->max = (vec2){{0, 0}};
+  font_buffer->min = (vec2){{1000, 1000}};
 
   char* text;
   int text_len;
@@ -255,7 +263,7 @@ mrb_font_buffer_calculate_size(mrb_state* mrb, mrb_value self)
   char* text;
   struct mrb_font_buffer* font_buffer = mrb_font_buffer_get_ptr(mrb, self);
 
-  return wrap_new_vec2(mrb, font_buffer->size.x, font_buffer->size.y);
+  return wrap_new_vec2(mrb, font_buffer->max.x - font_buffer->min.x, font_buffer->max.y - font_buffer->min.y);
 }
 
 void

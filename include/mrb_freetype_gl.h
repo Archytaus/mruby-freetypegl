@@ -7,7 +7,7 @@
 #include "gl_header.h"
 #include "freetype-gl.h"
 
-void mrb_mruby_freetype_gl_gem_init(mrb_state* mrb);
+void mrb_mruby_freetypegl_gem_init(mrb_state* mrb);
 
 #endif
 
